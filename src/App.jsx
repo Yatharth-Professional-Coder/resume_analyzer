@@ -288,7 +288,7 @@ function App() {
                   type="file" 
                   ref={fileInputRef} 
                   className="hidden" 
-                  accept=".pdf,.docx,.txt" 
+                  accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" 
                   onChange={handleFileUpload}
                 />
               </div>
