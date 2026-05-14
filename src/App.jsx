@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { FileText, UploadCloud, CheckCircle, FileCheck, BrainCircuit, Type, AlertCircle, Copy, Key, Send } from 'lucide-react';
 import { initAI, analyzeResume, generateCoverLetter } from './services/aiService';
-import { extractTextFromPdf } from './services/pdfService';
+import { extractTextFromFile } from './services/fileService';
 import ReactMarkdown from 'react-markdown';
 
 function App() {
@@ -40,25 +40,17 @@ function App() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.type === 'application/pdf') {
-      try {
-        const text = await extractTextFromPdf(file);
-        setResumeText(text);
-        setAnalysisResult(null);
-        setCoverLetterResult(null);
-      } catch (err) {
-        setError('An error occurred, please try after sometime');
-      }
-    } else if (file.type === 'text/plain') {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setResumeText(event.target.result);
-        setAnalysisResult(null);
-        setCoverLetterResult(null);
-      };
-      reader.readAsText(file);
-    } else {
-      setError('An error occurred, please try after sometime');
+    setIsLoading(true);
+    setError('');
+    try {
+      const text = await extractTextFromFile(file);
+      setResumeText(text);
+      setAnalysisResult(null);
+      setCoverLetterResult(null);
+    } catch (err) {
+      setError(err.message || 'An error occurred while reading the file.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,25 +68,19 @@ function App() {
     setIsHovering(false);
     
     const file = e.dataTransfer.files[0];
-    if (file) {
-      if (file.type === 'application/pdf') {
-        try {
-          const text = await extractTextFromPdf(file);
-          setResumeText(text);
-          setAnalysisResult(null);
-          setCoverLetterResult(null);
-        } catch (err) {
-          setError('An error occurred, please try after sometime');
-        }
-      } else {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          setResumeText(evt.target.result);
-          setAnalysisResult(null);
-          setCoverLetterResult(null);
-        };
-        reader.readAsText(file);
-      }
+    if (!file) return;
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const text = await extractTextFromFile(file);
+      setResumeText(text);
+      setAnalysisResult(null);
+      setCoverLetterResult(null);
+    } catch (err) {
+      setError(err.message || 'An error occurred while reading the file.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -296,13 +282,13 @@ function App() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <UploadCloud size={36} className="text-slate-400 mb-3" />
-                <p className="text-sm text-slate-300 font-medium">Drag & drop your PDF here</p>
+                <p className="text-sm text-slate-300 font-medium">Drag & drop PDF or Word (.docx) here</p>
                 <p className="text-xs text-slate-500 mt-1">or click to browse local files</p>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
                   className="hidden" 
-                  accept=".pdf,.txt" 
+                  accept=".pdf,.docx,.txt" 
                   onChange={handleFileUpload}
                 />
               </div>
