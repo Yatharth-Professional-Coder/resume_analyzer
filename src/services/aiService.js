@@ -23,7 +23,8 @@ export const analyzeResume = async (resumeText, jobDescription) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to analyze resume.');
+      const fullError = errorData.details ? `${errorData.error}: ${errorData.details}` : (errorData.error || 'Failed to analyze resume.');
+      throw new Error(fullError);
     }
 
     const data = await response.json();
@@ -51,7 +52,8 @@ export const generateCoverLetter = async (resumeText, jobDescription) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to generate cover letter.');
+      const fullError = errorData.details ? `${errorData.error}: ${errorData.details}` : (errorData.error || 'Failed to generate cover letter.');
+      throw new Error(fullError);
     }
 
     const data = await response.json();
