@@ -93,7 +93,10 @@ const analyzeResume = async (req, res) => {
 
   } catch (error) {
     console.error("AI Analysis process failed:", error.message);
-    return res.status(500).json({ error: "Failed to analyze resume. Please check your API keys." });
+    return res.status(500).json({ 
+      error: "AI service error", 
+      details: error.message 
+    });
   }
 };
 
@@ -120,7 +123,10 @@ const generateCoverLetter = async (req, res) => {
     return res.json({ coverLetter });
   } catch (error) {
     console.error("Cover Letter generation failed:", error.message);
-    return res.status(500).json({ error: "Failed to generate cover letter." });
+    return res.status(500).json({ 
+      error: "Cover Letter service error", 
+      details: error.message 
+    });
   }
 };
 
