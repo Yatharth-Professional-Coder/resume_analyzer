@@ -247,7 +247,7 @@ function App() {
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 min-h-screen flex flex-col font-sans">
       <header className="mb-8 text-center mt-6">
-        <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-brand-accent bg-clip-text text-transparent mb-3 animate-fade-in">Elevate.AI</h1>
+        <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-brand-accent bg-clip-text text-transparent mb-3 animate-fade-in">EvaluateResumeAI</h1>
         <p className="text-slate-400 text-lg animate-fade-in" style={{ animationDelay: '0.1s' }}>Premium Resume Optimizer & Cover Letter Generator</p>
       </header>
 

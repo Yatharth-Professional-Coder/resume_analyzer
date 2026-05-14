@@ -24,7 +24,7 @@ app.use('/api/ai', aiRoutes);
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('Elevate.AI API is running...');
+  res.send('EvaluateResumeAI API is running...');
 });
 
 const PORT = process.env.PORT || 5001;
