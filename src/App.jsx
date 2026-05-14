@@ -11,8 +11,9 @@ function App() {
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (envKey && initAI(envKey)) {
+    // In MERN mode, the backend handles the API key.
+    // initAI() checks if the backend URL is configured.
+    if (initAI()) {
       setIsApiKeySet(true);
     }
   }, []);
