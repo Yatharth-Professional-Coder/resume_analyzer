@@ -1,4 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api/ai';
+let API_URL = import.meta.env.VITE_API_URL || '/api/ai';
+
+// If VITE_API_URL is a full URL but missing /api/ai, append it automatically
+if (API_URL.startsWith('http') && !API_URL.includes('/api/ai')) {
+  API_URL = API_URL.endsWith('/') ? `${API_URL}api/ai` : `${API_URL}/api/ai`;
+}
 
 export const initAI = () => {
   // In MERN, the configuration happens on the backend.
