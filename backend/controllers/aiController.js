@@ -14,8 +14,13 @@ const analyzeResume = async (req, res) => {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  let targetModel = "gemini-3.1-flash-lite";
-  let attemptCount = 0;
+  
+  // Prioritized list of models to try
+  const modelsToTry = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro"
+  ];
 
   const prompt = `
   ${getSystemInstruction()}
@@ -36,8 +41,10 @@ const analyzeResume = async (req, res) => {
   }
   `;
 
-  while (attemptCount < 2) {
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const targetModel = modelsToTry[i];
     try {
+      console.log(`Attempting AI Analysis with model: ${targetModel} (Attempt ${i + 1})`);
       const model = genAI.getGenerativeModel({ 
         model: targetModel,
         generationConfig: { responseMimeType: "application/json" }
@@ -56,46 +63,21 @@ const analyzeResume = async (req, res) => {
       });
       
       const savedAnalysis = await analysisData.save();
-
       return res.json({ ...analysis, id: savedAnalysis._id });
-    } catch (error) {
-      const errMsg = error.message || "";
-      console.error(`AI Attempt ${attemptCount + 1} failed for model ${targetModel}:`, errMsg);
-      
-      const isQuotaError = errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('limit') || errMsg.includes('rate');
-      const isNotFoundError = errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('unsupported');
-      const isServiceError = errMsg.includes('503') || errMsg.includes('demand') || errMsg.includes('temporary') || errMsg.includes('retry');
 
-      if (attemptCount === 0 && (isQuotaError || isNotFoundError || isServiceError)) {
-        try {
-          console.log("!!! TRIGGERING AUTO-FALLBACK SERVICE !!!");
-          // Dynamically fetch models from Google API
-          const fetchRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-          const data = await fetchRes.json();
-          
-          if (data.models && data.models.length > 0) {
-            const availableModels = data.models
-              .map(m => m.name.replace('models/', ''))
-              .filter(name => name.includes('gemini'));
-            
-            // Prioritize the models based on the table provided by the user
-            const fallback = availableModels.find(m => m.includes('3.1-flash-lite') && m !== targetModel)
-                            || availableModels.find(m => m.includes('3-flash') && m !== targetModel)
-                            || availableModels.find(m => m.includes('2.5-flash') && m !== targetModel)
-                            || availableModels.find(m => m !== targetModel);
-            
-            if (fallback) {
-              console.log(`>>> AUTO-SWITCHING FROM ${targetModel} TO ${fallback} <<<`);
-              targetModel = fallback;
-              attemptCount++;
-              continue;
-            }
-          }
-        } catch (e) {
-          console.error("Critical failure during fallback discovery:", e.message);
-        }
+    } catch (error) {
+      console.error(`AI Error with ${targetModel}:`, error.message);
+      
+      // If this was our last model, return the error
+      if (i === modelsToTry.length - 1) {
+        return res.status(500).json({ 
+          error: "AI Analysis failed after trying multiple models.", 
+          details: error.message 
+        });
       }
-      return res.status(500).json({ error: error.message || "AI Analysis failed." });
+      
+      // Otherwise, continue to the next model in the list
+      console.log(`>>> FALLING BACK TO NEXT MODEL... <<<`);
     }
   }
 };
@@ -109,8 +91,12 @@ const generateCoverLetter = async (req, res) => {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  let targetModel = "gemini-3.1-flash-lite";
-  let attemptCount = 0;
+  
+  const modelsToTry = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro"
+  ];
 
   const prompt = `
   ${getSystemInstruction()}
@@ -119,8 +105,10 @@ const generateCoverLetter = async (req, res) => {
   Job Description: """${jobDescription}"""
   `;
 
-  while (attemptCount < 2) {
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const targetModel = modelsToTry[i];
     try {
+      console.log(`Attempting Cover Letter with model: ${targetModel} (Attempt ${i + 1})`);
       const model = genAI.getGenerativeModel({ model: targetModel });
       const result = await model.generateContent(prompt);
       const coverLetter = result.response.text();
@@ -131,38 +119,18 @@ const generateCoverLetter = async (req, res) => {
       }
 
       return res.json({ coverLetter });
+
     } catch (error) {
-      const errMsg = error.message || "";
-      console.error(`AI Attempt ${attemptCount + 1} failed for model ${targetModel}:`, errMsg);
-
-      const isQuotaError = errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('limit') || errMsg.includes('rate');
-      const isNotFoundError = errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('unsupported');
-      const isServiceError = errMsg.includes('503') || errMsg.includes('demand') || errMsg.includes('temporary') || errMsg.includes('retry');
-
-      if (attemptCount === 0 && (isQuotaError || isNotFoundError || isServiceError)) {
-        try {
-          const fetchRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-          const data = await fetchRes.json();
-          if (data.models) {
-            const availableModels = data.models
-              .map(m => m.name.replace('models/', ''))
-              .filter(name => name.includes('gemini'));
-            
-             const fallback = availableModels.find(m => m.includes('3.1-flash-lite') && m !== targetModel) 
-                            || availableModels.find(m => m.includes('3-flash') && m !== targetModel)
-                            || availableModels.find(m => m.includes('2.5-flash') && m !== targetModel)
-                            || availableModels.find(m => m !== targetModel);
-
-            if (fallback) {
-              console.log(`>>> AUTO-SWITCHING FROM ${targetModel} TO ${fallback} <<<`);
-              targetModel = fallback;
-              attemptCount++;
-              continue;
-            }
-          }
-        } catch (e) {}
+      console.error(`AI Error with ${targetModel}:`, error.message);
+      
+      if (i === modelsToTry.length - 1) {
+        return res.status(500).json({ 
+          error: "Cover Letter generation failed after trying multiple models.", 
+          details: error.message 
+        });
       }
-      return res.status(500).json({ error: errMsg || "Cover Letter generation failed." });
+      
+      console.log(`>>> FALLING BACK TO NEXT MODEL... <<<`);
     }
   }
 };
