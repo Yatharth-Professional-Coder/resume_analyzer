@@ -31,9 +31,11 @@ const getAICompletion = async (prompt, isJson = false) => {
       return chatCompletion.choices[0].message.content;
     } catch (error) {
       console.error("Groq AI failed:", error.message);
-      if (!geminiKey) throw error;
+      if (!geminiKey) throw new Error(`Groq failed: ${error.message}. No Gemini key for fallback.`);
       console.log("Falling back to Gemini...");
     }
+  } else {
+    console.warn("GROQ_API_KEY is not defined in environment variables.");
   }
 
   // 2. Fallback to Gemini
@@ -42,7 +44,7 @@ const getAICompletion = async (prompt, isJson = false) => {
       console.log("Attempting AI call with Gemini 1.5 Flash...");
       const genAI = new GoogleGenerativeAI(geminiKey);
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
+        model: "gemini-1.5-flash-latest",
         generationConfig: isJson ? { responseMimeType: "application/json" } : undefined
       });
 
